@@ -2,8 +2,8 @@
 {
     public enum ThreadingMode
     {
-        Shared,
+        Dedicated,
         SharedNetwork,
-        Dedicated
+        Shared,
     }
 }

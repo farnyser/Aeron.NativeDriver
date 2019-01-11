@@ -18,26 +18,12 @@ namespace Aeron.NativeDriver
             [ThreadingMode.Dedicated] = "DEDICATED",
         };
 
-        private readonly Process _process;
+        private IntPtr _context;
+        private IntPtr _driver;
 
         public string DirectoryName { get; private set; }
         public ThreadingMode ThreadingMode { get; private set; }
         public bool DeleteDirectoryOnLaunch { get; private set; }
-
-        public MediaDriver()
-        {
-            _process = new Process
-            {
-                StartInfo =
-                {
-                    CreateNoWindow = true,
-                    UseShellExecute = false,
-                    FileName = "aeronmd",
-                }
-            };
-
-            _process.Exited += ProcessOnExited;
-        }
 
         public void Launch(ThreadingMode threadingMode, bool deleteDirectoryOnLaunch)
         {
@@ -57,24 +43,21 @@ namespace Aeron.NativeDriver
             LaunchInternal();
         }
 
-        private void ProcessOnExited(object sender, EventArgs e)
-        {
-            throw new Exception($"Media driver exited unexpectedly");
-        }
-
         private void LaunchInternal()
         {
-            _process.StartInfo.EnvironmentVariables[_aeronDirEnvVar] = DirectoryName;
-            _process.StartInfo.EnvironmentVariables[_aeronDirDeleteOnStartEnvVar] = DeleteDirectoryOnLaunch ? "true" : "false";
-            _process.StartInfo.EnvironmentVariables[_aeronThreadingModeEnvVar] = _aeronThreadingModeLookup[ThreadingMode];
-            _process.Start();
+            Environment.SetEnvironmentVariable(_aeronDirDeleteOnStartEnvVar, DeleteDirectoryOnLaunch ? "true" : "false");
+            Environment.SetEnvironmentVariable(_aeronDirEnvVar, DirectoryName);
+            Environment.SetEnvironmentVariable(_aeronThreadingModeEnvVar, _aeronThreadingModeLookup[ThreadingMode]);
+
+            NativeMediaDriver.InitContext(out _context);
+            NativeMediaDriver.InitDriver(out _driver, _context);
+            NativeMediaDriver.StartDriver(_driver, true);
         }
 
         public void Dispose()
         {
-            // TODO Send SIG_INT to native media driver
-            _process.Exited -= ProcessOnExited;
-            _process.Dispose();
+            NativeMediaDriver.CloseDriver(_driver);
+            NativeMediaDriver.CloseContext(_context);
         }
     }
 }

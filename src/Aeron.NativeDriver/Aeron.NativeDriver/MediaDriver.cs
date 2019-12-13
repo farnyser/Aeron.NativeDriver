@@ -7,9 +7,9 @@ namespace Aeron.NativeDriver
 {
     public class MediaDriver : IMediaDriver
     {
-        private static readonly string _aeronThreadingModeEnvVar = "AERON_THREADING_MODE_ENV_VAR";
-        private static readonly string _aeronDirDeleteOnStartEnvVar = "AERON_DIR_DELETE_ON_START_ENV_VAR";
-        private static readonly string _aeronDirEnvVar = "AERON_DIR_ENV_VAR";
+        private static readonly string _aeronThreadingModeEnvVar = "AERON_THREADING_MODE";
+        private static readonly string _aeronDirDeleteOnStartEnvVar = "AERON_DIR_DELETE_ON_START";
+        private static readonly string _aeronDirEnvVar = "AERON_DIR";
 
         private static readonly Dictionary<ThreadingMode,string> _aeronThreadingModeLookup = new Dictionary<ThreadingMode,string>()
         {
@@ -49,9 +49,14 @@ namespace Aeron.NativeDriver
             Environment.SetEnvironmentVariable(_aeronDirEnvVar, DirectoryName);
             Environment.SetEnvironmentVariable(_aeronThreadingModeEnvVar, _aeronThreadingModeLookup[ThreadingMode]);
 
-            NativeMediaDriver.InitContext(out _context);
-            NativeMediaDriver.InitDriver(out _driver, _context);
-            NativeMediaDriver.StartDriver(_driver, true);
+            if (NativeMediaDriver.InitContext(out _context) != 0)
+                throw new Exception("Failed to init context");
+
+            if (NativeMediaDriver.InitDriver(out _driver, _context) != 0)
+                throw new Exception("Failed to init driver");
+
+            if (NativeMediaDriver.StartDriver(_driver, false) != 0)
+                throw new Exception("Failed to start driver");
         }
 
         public void Dispose()

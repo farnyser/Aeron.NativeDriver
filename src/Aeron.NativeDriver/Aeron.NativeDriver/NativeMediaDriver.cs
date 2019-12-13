@@ -12,7 +12,7 @@ namespace Aeron.NativeDriver
         internal static extern int InitDriver(out IntPtr driver, IntPtr context);
 
         [DllImport("aeron_driver", EntryPoint = "aeron_driver_start")]
-        internal static extern int StartDriver(IntPtr driver, bool startConductor);
+        internal static extern int StartDriver(IntPtr driver, bool manualStartConductor);
 
         [DllImport("aeron_driver", EntryPoint = "aeron_driver_close")]
         internal static extern int CloseDriver(IntPtr driver);
